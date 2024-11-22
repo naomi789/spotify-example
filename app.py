@@ -1,24 +1,48 @@
-from authlib.integrations.requests_client import OAuth2Session
+import json
 
-from keys import client_id, client_secret # Keep these in a separate file
-# All the possible scopes are listed here:
-# https://developer.spotify.com/documentation/general/guides/authorization/scopes/
-scope = "playlist-read-private"
+from flask import Flask, redirect, session, url_for
+from authlib.integrations.flask_client import OAuth
 
-# Get user to authorize the client: You may need to add the redirect URL from your app dashboard
-client = OAuth2Session(client_id, client_secret, scope=scope, redirect_uri="http://sayamindu.pythonanywhere.com/spotify")
-authorization_endpoint = "https://accounts.spotify.com/authorize"
-uri, state = client.create_authorization_url(authorization_endpoint)
-print("Please go to this URL in your web browser and follow the prompts:{}".format(uri))
+from keys import secret_key, spotify_client_id, spotify_client_secret
 
-# Get the authorization response back
-authorization_response = input("Once you are redirected by your browser, copy the URL from your browser's address bar and enter it here:")
+app = Flask(__name__)
+app.secret_key = secret_key
 
-# Get the token
-token_endpoint = "https://accounts.spotify.com/api/token"
-token = client.fetch_token(token_endpoint, authorization_response=authorization_response)
+oauth = OAuth(app)
+oauth.register(
+   name="spotify",
+   client_id=spotify_client_id,
+   client_secret=spotify_client_secret,
+   authorize_url="https://accounts.spotify.com/authorize",
+   access_token_url="https://accounts.spotify.com/api/token",
+   api_base_url="https://api.spotify.com/v1/",
+   client_kwargs={
+       'scope': 'playlist-read-private user-top-read'
+   }
+)
 
-# Get data with the token
-api_endpoint = "https://api.spotify.com/v1"
-resp = client.get(api_endpoint + "/me/playlists")
-print(resp.text) # JSON data that you can do things with
+@app.route("/login")
+def login():
+   redirect_uri = url_for('authorize', _external=True)
+   print(redirect_uri)
+   return oauth.spotify.authorize_redirect(redirect_uri)
+
+
+@app.route("/spotify-authorize")
+def authorize():
+   token = oauth.spotify.authorize_access_token()
+   session["spotify-token"] = token
+   return token
+
+
+@app.route("/")
+def index():
+   try:
+       token = session["spotify-token"]
+   except KeyError:
+       return redirect(url_for("login"))
+   data = oauth.spotify.get("me/top/tracks?limit=5", token=token).text
+   return json.loads(data)
+
+if __name__ == "__main__":
+    app.run(debug=True)
