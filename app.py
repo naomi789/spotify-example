@@ -69,34 +69,20 @@ def callback():
 
     # Auth Step 6: Use the access token to access Spotify API
     authorization_header = {"Authorization": "Bearer {}".format(access_token)}
-    #
-    # # Get profile data
-    # user_profile_api_endpoint = "{}/me".format(SPOTIFY_API_URL)
-    # profile_response = requests.get(user_profile_api_endpoint, headers=authorization_header)
-    # profile_data = json.loads(profile_response.text)
-    #
-    # # Get user playlist data
-    # playlist_api_endpoint = "{}/playlists".format(profile_data["href"])
-    # playlists_response = requests.get(playlist_api_endpoint, headers=authorization_header)
-    # playlist_data = json.loads(playlists_response.text)
 
-
-    # https://api.spotify.com/v1/me/top/artists
     top_tracks_api_endpoint = "{}/me/top/tracks?limit=5".format(SPOTIFY_API_URL)
-    print(f'the user_profile_api_endpoint is: "{top_tracks_api_endpoint}"')
+    top_tracks_response = requests.get(top_tracks_api_endpoint, headers=authorization_header)
+    top_tracks = json.loads(top_tracks_response.text)
 
-    print(f'the authorization_token is: {auth_token}')
+    top_tracks = top_tracks['items']
+    artist_song_names = []
+    for track in top_tracks:
+        artist = track['artists'][0]['name']
+        song_name = track['name']
+        print(f'{artist}, {song_name}\n\n\n')
+        artist_song_names.append((artist, song_name))
 
-    profile_response = requests.get(top_tracks_api_endpoint, headers=authorization_header)
-    print(f'the profile_response is: "{profile_response}"')
-    profile_data = json.loads(profile_response.text)
-    print(f'the profile_data is: "{profile_data}"')
-
-    # # Combine profile and playlist data to display
-    # display_arr = [profile_data] + playlist_data["items"]
-    # return render_template("index.html", sorted_array=display_arr)
-
-    return render_template("index.html", sorted_array=profile_data)
+    return render_template("index.html", sorted_array=artist_song_names)
 
 
 if __name__ == "__main__":
