@@ -4,9 +4,6 @@ import requests
 from urllib.parse import quote
 from keys import spotify_client_id, spotify_client_secret, secret_key
 
-# Authentication Steps, paramaters, and responses are defined at https://developer.spotify.com/web-api/authorization-guide/
-# Visit this url to see all the steps, parameters, and expected response.
-
 
 app = Flask(__name__)
 
@@ -25,7 +22,9 @@ SPOTIFY_API_URL = "{}/{}".format(SPOTIFY_API_BASE_URL, API_VERSION)
 CLIENT_SIDE_URL = "http://127.0.0.1"
 PORT = 8080
 REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
-SCOPE = "playlist-modify-public playlist-modify-private"
+# SCOPE = "playlist-modify-public playlist-modify-private"
+SCOPE = "user-top-read"
+
 STATE = ""
 SHOW_DIALOG_bool = True
 SHOW_DIALOG_str = str(SHOW_DIALOG_bool).lower()
@@ -70,20 +69,34 @@ def callback():
 
     # Auth Step 6: Use the access token to access Spotify API
     authorization_header = {"Authorization": "Bearer {}".format(access_token)}
+    #
+    # # Get profile data
+    # user_profile_api_endpoint = "{}/me".format(SPOTIFY_API_URL)
+    # profile_response = requests.get(user_profile_api_endpoint, headers=authorization_header)
+    # profile_data = json.loads(profile_response.text)
+    #
+    # # Get user playlist data
+    # playlist_api_endpoint = "{}/playlists".format(profile_data["href"])
+    # playlists_response = requests.get(playlist_api_endpoint, headers=authorization_header)
+    # playlist_data = json.loads(playlists_response.text)
 
-    # Get profile data
-    user_profile_api_endpoint = "{}/me".format(SPOTIFY_API_URL)
-    profile_response = requests.get(user_profile_api_endpoint, headers=authorization_header)
+
+    # https://api.spotify.com/v1/me/top/artists
+    top_tracks_api_endpoint = "{}/me/top/tracks?limit=5".format(SPOTIFY_API_URL)
+    print(f'the user_profile_api_endpoint is: "{top_tracks_api_endpoint}"')
+
+    print(f'the authorization_token is: {auth_token}')
+
+    profile_response = requests.get(top_tracks_api_endpoint, headers=authorization_header)
+    print(f'the profile_response is: "{profile_response}"')
     profile_data = json.loads(profile_response.text)
+    print(f'the profile_data is: "{profile_data}"')
 
-    # Get user playlist data
-    playlist_api_endpoint = "{}/playlists".format(profile_data["href"])
-    playlists_response = requests.get(playlist_api_endpoint, headers=authorization_header)
-    playlist_data = json.loads(playlists_response.text)
+    # # Combine profile and playlist data to display
+    # display_arr = [profile_data] + playlist_data["items"]
+    # return render_template("index.html", sorted_array=display_arr)
 
-    # Combine profile and playlist data to display
-    display_arr = [profile_data] + playlist_data["items"]
-    return render_template("index.html", sorted_array=display_arr)
+    return render_template("index.html", sorted_array=profile_data)
 
 
 if __name__ == "__main__":
