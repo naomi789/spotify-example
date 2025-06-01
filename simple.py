@@ -2,9 +2,11 @@ import json
 from flask import Flask, request, redirect, g, render_template
 import requests
 from urllib.parse import quote
+
+# see the fake_keys.py file to see what my real keys look like
 from keys import spotify_client_id, spotify_client_secret
 
-# create your app
+
 app = Flask(__name__)
 
 #  Client Keys
@@ -72,7 +74,6 @@ def callback():
 
     top_tracks_api_endpoint = "{}/me/top/tracks?limit=5".format(SPOTIFY_API_URL)
     top_tracks_response = requests.get(top_tracks_api_endpoint, headers=authorization_header)
-
     top_tracks = json.loads(top_tracks_response.text)
 
     top_tracks = top_tracks['items']
